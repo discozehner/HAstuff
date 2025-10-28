@@ -1,0 +1,43 @@
+blueprint:
+  name: Trockner-Stoppuhr mit Startzeit
+  description: >
+    Speichert die Startzeit des Trockners in einem input_datetime, wenn er eingeschaltet wird.
+    Die Laufzeit kann über einen Template-Sensor berechnet und in einer Button-Card angezeigt werden.
+  domain: automation
+  input:
+    trigger_sensor:
+      name: Trockner Status Sensor
+      description: Der Sensor, der den Zustand des Trockners angibt.
+      selector:
+        entity:
+          domain: sensor
+    state_on:
+      name: Zustand zum Starten
+      description: Der Zustand, bei dem die Stoppuhr gestartet wird (z. B. "eingeschaltet").
+      default: "eingeschaltet"
+      selector:
+        text:
+    input_datetime_entity:
+      name: input_datetime für Startzeit
+      description: Die Entität, in der die Startzeit gespeichert wird.
+      selector:
+        entity:
+          domain: input_datetime
+
+mode: restart
+trigger:
+  - platform: state
+    entity_id: !input trigger_sensor
+
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.to_state.state == input.state_on }}
+        sequence:
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input input_datetime_entity
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
